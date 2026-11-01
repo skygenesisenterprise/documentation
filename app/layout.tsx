@@ -11,25 +11,25 @@ const inter = Inter({
 
 export const metadata: Metadata = {
 	metadataBase: new URL(
-		process.env.NEXT_PUBLIC_APP_URL || "https://docs.notploy.com",
+		process.env.NEXT_PUBLIC_APP_URL || "https://docs.skygenesisenterprise.com",
 	),
 	title: {
-		default: "Notploy Documentation",
-		template: "%s | Notploy Documentation",
+		default: "Sky Genesis Enterprise Documentation",
+		template: "%s | Sky Genesis Enterprise Documentation",
 	},
 	description:
 		"Open Source Alternative to Vercel, Netlify and Heroku. Deploy your applications with ease.",
 	keywords: [
-		"notploy",
+		"skygenesisenterprise",
 		"deployment",
 		"docker",
 		"hosting",
 		"devops",
 		"open source",
 	],
-	authors: [{ name: "Notploy Team" }],
+	authors: [{ name: "Sky Genesis Enterprise Team" }],
 	openGraph: {
-		title: "Notploy Documentation",
+		title: "Sky Genesis Enterprise Documentation",
 		description: "Open Source Alternative to Vercel, Netlify and Heroku",
 		type: "website",
 	},

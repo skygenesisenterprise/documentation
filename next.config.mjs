@@ -4,9 +4,9 @@ import { legacyDocRedirects } from "./scripts/redirects.mjs";
 
 const withMDX = createMDX();
 
-// The monorepo has a single pnpm workspace at the repository root, so the
-// standalone trace root is the repo root (not web/apps/docs).
-const tracingRoot = path.join(import.meta.dirname, "../../..");
+// The documentation app is the repository root, so standalone tracing starts
+// here and the build output lives at `.next/standalone/server.js`.
+const tracingRoot = import.meta.dirname;
 
 // Two build targets share this config:
 //

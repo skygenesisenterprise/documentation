@@ -1,36 +1,47 @@
-# Build from the repository root (the root pnpm-workspace.yaml is the single
-# workspace for the whole monorepo):
-#   docker build -f web/Dockerfile.docs .
+# syntax=docker/dockerfile:1
+
+# Documentation site only. Build from the repository root:
+#   docker build -t skygenesisenterprise/docs .
+#   docker run --rm -p 3000:3000 skygenesisenterprise/docs
+
 FROM node:24.4-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN npm install -g pnpm@10.22.0
+RUN npm install -g pnpm@12.16.1
 
 FROM base AS build
-COPY . /usr/src/app
-WORKDIR /usr/src/app
-
-# Install dependencies (docs + its workspace deps only)
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --filter=@notploy/docs... --frozen-lockfile
-
-# Generate OpenAPI documentation from web/apps/docs/public/openapi.json
-RUN pnpm --filter=@notploy/docs run build:docs
-
-ENV NODE_ENV=production
-RUN pnpm --filter=@notploy/docs run build
-
-FROM base AS notploy
 WORKDIR /app
 
-# Set production
-ENV NODE_ENV=production
+# Copy the application before installing: the postinstall hook runs
+# `fumadocs-mdx`, which reads source.config.ts and the content tree.
+COPY . .
 
-# Copy standalone output (includes all traced dependencies, traced from the
-# repository root so the app keeps its `web/apps/docs` path inside the output)
-COPY --from=build /usr/src/app/web/apps/docs/.next/standalone ./
-# Copy static assets and public files
-COPY --from=build /usr/src/app/web/apps/docs/.next/static ./web/apps/docs/.next/static
-COPY --from=build /usr/src/app/web/apps/docs/public ./web/apps/docs/public
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+	pnpm install --frozen-lockfile
+
+# Regenerate the API reference from public/openapi.json.
+RUN pnpm build:docs
+
+ENV NODE_ENV=production
+RUN pnpm build
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+
+RUN addgroup --system --gid 1001 nodejs \
+	&& adduser --system --uid 1001 nextjs
+
+# The standalone output contains the traced server and its dependencies.
+COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=build --chown=nextjs:nodejs /app/public ./public
+
+USER nextjs
 
 EXPOSE 3000
-CMD HOSTNAME=0.0.0.0 node web/apps/docs/server.js
+
+CMD ["node", "server.js"]
